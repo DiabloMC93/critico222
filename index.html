@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Contrapulsación y Cardioversión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* Slate 950 */
+            color: #f1f5f9;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.8); /* Slate 900 */
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background-color: rgba(51, 65, 85, 0.8);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .correct {
+            background-color: #064e3b !important;
+            border-color: #10b981 !important;
+            color: #d1fae5 !important;
+        }
+
+        .incorrect {
+            background-color: #450a0a !important;
+            border-color: #ef4444 !important;
+            color: #fee2e2 !important;
+        }
+
+        #next-btn {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="w-full max-w-2xl">
+        <!-- Pantalla del Test -->
+        <div id="quiz-screen">
+            <!-- Cabecera de Stats -->
+            <div class="flex justify-between items-end mb-8 px-2">
+                <div class="flex gap-4">
+                    <div class="glass-card px-5 py-3 rounded-2xl border-green-500/20 text-center min-w-[110px]">
+                        <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold block mb-1">Aciertos</span>
+                        <span id="score-correct" class="text-2xl font-bold text-green-400">0</span>
+                    </div>
+                    <div class="glass-card px-5 py-3 rounded-2xl border-red-500/20 text-center min-w-[110px]">
+                        <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold block mb-1">Errores</span>
+                        <span id="score-incorrect" class="text-2xl font-bold text-red-400">0</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span id="question-index" class="text-xs font-bold text-orange-400 uppercase tracking-tighter bg-orange-500/10 px-3 py-1.5 rounded-lg border border-orange-500/20">
+                        Cargando...
+                    </span>
+                </div>
+            </div>
+
+            <!-- Pregunta -->
+            <div class="glass-card p-8 md:p-10 rounded-3xl mb-8 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-red-600"></div>
+                
+                <h2 id="question-text" class="text-xl md:text-2xl font-medium mb-10 text-slate-100 leading-snug">
+                    Cargando pregunta...
+                </h2>
+                
+                <div id="options-container" class="grid gap-3">
+                    <!-- Opciones dinámicas -->
+                </div>
+            </div>
+            
+            <div class="flex justify-center">
+                <button id="next-btn" onclick="quiz.next()" class="hidden bg-orange-600 hover:bg-orange-500 text-white px-10 py-4 rounded-2xl font-bold transition-all transform active:scale-95">
+                    Siguiente Pregunta
+                </button>
+            </div>
+        </div>
+
+        <!-- Pantalla Final -->
+        <div id="result-screen" class="hidden glass-card p-12 rounded-3xl text-center">
+            <div class="w-20 h-20 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h2 class="text-3xl font-bold mb-2 text-white">¡Bloque Finalizado!</h2>
+            <p class="text-slate-400 mb-10">Has completado las preguntas de Contrapulsación y Cardioversión.</p>
+            
+            <div class="grid grid-cols-2 gap-6 mb-12">
+                <div class="p-6 bg-slate-900/50 rounded-2xl border border-green-500/20">
+                    <p class="text-green-500 text-xs font-bold uppercase mb-2">Aciertos</p>
+                    <p id="final-correct" class="text-5xl font-bold text-green-400">0</p>
+                </div>
+                <div class="p-6 bg-slate-900/50 rounded-2xl border border-red-500/20">
+                    <p class="text-red-500 text-xs font-bold uppercase mb-2">Errores</p>
+                    <p id="final-incorrect" class="text-5xl font-bold text-red-400">0</p>
+                </div>
+            </div>
+            
+            <button onclick="location.reload()" class="w-full bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-2xl font-bold transition-all border border-slate-700">
+                Reiniciar Test
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "24. ¿Cómo es el globo de la contrapulsación aórtica?", a: ["Globo pequeño", "Globo alargado", "Globo doblado", "Globo vaciado"], c: 1 },
+            { q: "25. ¿Dónde se indica la contrapulsación aórtica?", a: ["Shock cardiogénico", "Preoperatorio en cirugía cardiaca", "Defectos mecánicos reversibles", "Todas las anteriores"], c: 3 },
+            { q: "26. ¿Qué hay que hacer a diario en la contrapulsación aórtica?", a: ["Curas del punto de punción", "TAC", "Rx tórax", "Peinar al paciente"], c: 2 },
+            { q: "27. ¿Dónde no se indica la contrapulsación aórtica?", a: ["Preoperatorio en cirugía estética", "Preoperatorio en cirugía cardiaca", "Defectos mecánicos irreversibles", "Todas las anteriores"], c: 2 },
+            { q: "28. ¿Cuál de estos cuidados no corresponde a la contrapulsación aórtica?", a: ["Rx tórax (diaria) y Curas del puntos de punción", "Vigilar clínica de isquemia de la extremidad inferior canalizada", "El balón no debe permanecer parado más de 46 min. (riesgo de tromboembolismo)", "ECG continuo"], c: 2 },
+            { q: "29. ¿Cuál no es una complicación de la contrapulsación aórtica?", a: ["Rotura del balón", "Tromboembolismo distal", "Presión local y sistémica", "Trombocitopenia"], c: 2 },
+            { q: "30. ¿Qué acción ocurre durante la diástole en la contrapulsación aórtica?", a: ["El balón intraaórtico se infla para aumentar la presión en la aorta.", "El balón intraaórtico se desinfla para disminuir la presión en la aorta.", "El balón intraaórtico se mantiene estático.", "Se administra un medicamento vasodilatador."], c: 0 },
+            { q: "31. ¿Cuál es una complicación potencial de la contrapulsación aórtica?", a: ["Hipertensión arterial.", "Trombosis venosa profunda.", "Disección aórtica.", "Hipoglucemia."], c: 2 },
+            { q: "32. ¿Cuál es una posible complicación asociada con la contrapulsación aórtica?", a: ["Hipotensión.", "Taquicardia.", "Hipercapnia.", "Trombosis arterial"], c: 3 },
+            { q: "33. ¿Cuál es el propósito principal de la contrapulsación aórtica?", a: ["Mejorar la función pulmonar.", "Reducir la presión arterial sistólica.", "Incrementar el gasto cardíaco.", "Estabilizar el ritmo cardíaco."], c: 2 },
+            { q: "34. ¿Cómo se introduce típicamente el balón de contrapulsación aórtica (BCPA) en el cuerpo del paciente?", a: ["A través de una incisión en la pierna.", "Mediante una punción en el brazo.", "Durante una cirugía a corazón abierto.", "Por vía nasal."], c: 0 },
+            { q: "35. ¿En qué fase del ciclo cardíaco se infla el balón en la contrapulsación aórtica?", a: ["Sístole.", "Diástole.", "Contracción isovolumétrica.", "Durante la eyección ventricular."], c: 1 },
+            { q: "36. ¿Cuál es el principal beneficio de la contrapulsación aórtica en pacientes con insuficiencia cardíaca grave?", a: ["Reducción de la poscarga y mejora de la perfusión coronaria.", "Incremento de la resistencia vascular periférica.", "Estimulación del sistema nervioso simpático.", "Disminución del gasto cardíaco."], c: 0 },
+            { q: "37. ¿Cuál no es una indicación de la cardioversión?", a: ["Taquicardia supraventricular", "Flutter auricular", "FA", "TV sin pulso"], c: 3 },
+            { q: "38. ¿Cómo debe estar el O2 en la cardioversión?", a: ["O2 al 40%", "O2 al 60%", "O2 al 50%", "O2 al 70%"], c: 2 },
+            { q: "39. ¿Cuál es el propósito principal de la cardioversión eléctrica?", a: ["Detener por completo el corazón.", "Restaurar el ritmo cardíaco normal.", "Aumentar la presión arterial.", "Reducir la actividad del sistema nervioso simpático."], c: 1 },
+            { q: "40. ¿Qué tipo de ritmos cardíacos se pueden tratar con la cardioversión eléctrica?", a: ["Fibrilación auricular.", "Taquicardia ventricular.", "Bradicardia sinusal.", "Extrasístoles auriculares."], c: 0 },
+            { q: "41. ¿Cuál es una diferencia clave entre la cardioversión eléctrica y la desfibrilación externa?", a: ["La cardioversión se realiza con menos energía que la desfibrilación.", "La cardioversión solo se puede realizar en hospitales.", "La desfibrilación solo se puede realizar en ritmos cardíacos rápidos.", "La desfibrilación siempre se realiza con anestesia general."], c: 0 },
+            { q: "42. ¿Qué precaución se debe tomar antes de realizar una cardioversión eléctrica o una desfibrilación externa?", a: ["Administrar analgésicos.", "Asegurarse de que nadie esté en contacto directo con el paciente.", "No es necesario tomar precauciones especiales.", "Realizar una resonancia magnética previa."], c: 1 },
+            { q: "43. ¿Cuál es el objetivo principal de la desfibrilación externa?", a: ["Restaurar el ritmo sinusal normal.", "Detener la respiración del paciente.", "Detener la actividad eléctrica desorganizada del corazón.", "Aumentar la frecuencia cardíaca."], c: 2 },
+            { q: "44. ¿Cuál es el propósito principal de la cardioversión eléctrica?", a: ["Detener la fibrilación auricular.", "Restaurar el ritmo sinusal normal.", "Incrementar la frecuencia cardíaca.", "Tratar la bradicardia severa."], c: 1 },
+            { q: "45. ¿Qué tipo de ritmos cardiacos suele tratarse con la cardioversión eléctrica?", a: ["Taquicardia ventricular.", "Fibrilación ventricular.", "Taquicardia supraventricular.", "Bloqueo cardíaco completo."], c: 2 },
+            { q: "46. ¿Cuál es una diferencia clave entre la cardioversión eléctrica y la desfibrilación externa?", a: ["La cardioversión eléctrica se utiliza para ritmos cardíacos anormalmente lentos.", "La desfibrilación externa se realiza con un choque sincronizado al ciclo cardíaco.", "Ambos procedimientos son términos intercambiables.", "La cardioversión eléctrica no requiere anestesia."], c: 2 },
+            { q: "47. ¿Cuál es el propósito principal de la desfibrilación externa?", a: ["Restaurar el ritmo sinusal normal.", "Romper la cadena de reentrada en taquiarritmias supraventriculares.", "Detener la fibrilación ventricular o la taquicardia ventricular sin pulso.", "Tratar la hipotensión arterial."], c: 2 },
+            { q: "48. ¿Qué consideración de seguridad es esencial antes de administrar un choque eléctrico?", a: ["Asegurarse de que el paciente esté despierto y alerta.", "Garantizar que el personal médico esté protegido de descargas eléctricas.", "Administrar sedación profunda para reducir el dolor.", "Utilizar una corriente eléctrica máxima para garantizar la eficacia."], c: 1 }
+        ];
+
+        class Quiz {
+            constructor() {
+                this.currentIdx = 0;
+                this.correct = 0;
+                this.incorrect = 0;
+                this.answered = false;
+            }
+
+            init() {
+                this.renderQuestion();
+            }
+
+            renderQuestion() {
+                this.answered = false;
+                const q = questions[this.currentIdx];
+                document.getElementById('question-index').innerText = `Página ${this.currentIdx + 1} de ${questions.length}`;
+                document.getElementById('question-text').innerText = q.q;
+                document.getElementById('next-btn').classList.add('hidden');
+                
+                const container = document.getElementById('options-container');
+                container.innerHTML = '';
+
+                q.a.forEach((option, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn w-full text-left p-5 rounded-2xl font-medium text-slate-300';
+                    btn.innerText = option;
+                    btn.onclick = () => this.checkAnswer(idx, btn);
+                    container.appendChild(btn);
+                });
+            }
+
+            checkAnswer(idx, btn) {
+                if (this.answered) return;
+                this.answered = true;
+                
+                const correctIdx = questions[this.currentIdx].c;
+                const buttons = document.querySelectorAll('.option-btn');
+                
+                if (idx === correctIdx) {
+                    this.correct++;
+                    btn.classList.add('correct');
+                    document.getElementById('score-correct').innerText = this.correct;
+                } else {
+                    this.incorrect++;
+                    btn.classList.add('incorrect');
+                    buttons[correctIdx].classList.add('correct');
+                    document.getElementById('score-incorrect').innerText = this.incorrect;
+                }
+
+                buttons.forEach(b => b.disabled = true);
+                document.getElementById('next-btn').classList.remove('hidden');
+            }
+
+            next() {
+                this.currentIdx++;
+                if (this.currentIdx < questions.length) {
+                    this.renderQuestion();
+                } else {
+                    this.finish();
+                }
+            }
+
+            finish() {
+                document.getElementById('quiz-screen').classList.add('hidden');
+                document.getElementById('result-screen').classList.remove('hidden');
+                document.getElementById('final-correct').innerText = this.correct;
+                document.getElementById('final-incorrect').innerText = this.incorrect;
+            }
+        }
+
+        const quiz = new Quiz();
+        window.onload = () => quiz.init();
+    </script>
+</body>
+</html>
